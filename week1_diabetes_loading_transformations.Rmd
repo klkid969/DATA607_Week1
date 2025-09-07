@@ -1,0 +1,93 @@
+---
+title: "Week 1: Loading Data into a Data Frame (Pima Indians Diabetes)"
+author: "Kevin Martin"
+output: html_document
+---
+
+## Overview
+This report loads the **Pima Indians Diabetes** dataset, creates a focused and readable subset,
+and applies basic cleaning steps (e.g., converting physiologically impossible zeros to missing values).
+The goal is a tidy data frame ready for analysis and reproducible grading.
+
+**Source**: Kaggle “Pima Indians Diabetes Database” (mirrors the classic UCI dataset).
+
+## Data Source
+Data file is placed in `data/diabetes.csv` under this project.
+
+```{r setup, message=FALSE, warning=FALSE}
+# Load required packages
+library(readr)
+library(dplyr)
+library(tidyr)
+```
+
+## Load Data
+```{r}
+# Read from the local data folder inside this project
+# Peek at the first few lines in the raw CSV to see where the true header is
+readr::read_lines("data/diabetes.csv", n_max = 5)
+# Load the data, skipping the first line which only says "diabetes"
+df <- readr::read_csv("data/diabetes.csv", skip = 1, show_col_types = FALSE)
+
+# Preview to confirm correct column names
+glimpse(df)
+```
+
+## Standardize Column Names (safe reset)
+```{r}
+names(df) <- c(
+  "Pregnancies","Glucose","BloodPressure","SkinThickness",
+  "Insulin","BMI","DiabetesPedigreeFunction","Age","Outcome"
+)
+glimpse(df)
+```
+
+## Transformations
+```{r}
+df_clean <- df %>%
+  mutate(
+    Glucose       = na_if(Glucose, 0),
+    BloodPressure = na_if(BloodPressure, 0),
+    SkinThickness = na_if(SkinThickness, 0),
+    Insulin       = na_if(Insulin, 0),
+    BMI           = na_if(BMI, 0),
+    Outcome       = factor(Outcome, levels = c(0,1), labels = c("NoDiabetes","Diabetes"))
+  )
+
+# Focused subset for quick checks
+df_subset <- df_clean %>%
+  select(Pregnancies, Glucose, BloodPressure, BMI, Age, Outcome)
+
+glimpse(df_subset)
+```
+
+## Quick Checks (optional)
+```{r}
+# Missingness in key clinical fields
+df_clean %>%
+  summarize(
+    n = n(),
+    miss_glucose = sum(is.na(Glucose)),
+    miss_bp      = sum(is.na(BloodPressure)),
+    miss_skin    = sum(is.na(SkinThickness)),
+    miss_insulin = sum(is.na(Insulin)),
+    miss_bmi     = sum(is.na(BMI))
+  )
+
+# Class balance
+df_clean %>% count(Outcome)
+
+# Simple numeric summaries (ignoring NAs)
+df_subset %>%
+  summarize(
+    mean_glucose = mean(Glucose, na.rm = TRUE),
+    mean_bmi     = mean(BMI, na.rm = TRUE),
+    mean_age     = mean(Age, na.rm = TRUE)
+  )
+```
+
+## Conclusions / Findings & Recommendations
+(Write 3–5 sentences here in your voice.)
+- Confirm that the dataset is clean/readable (headers set; zeros handled; outcome labeled).
+- One or two takeaways from your quick checks (e.g., any missingness or class balance notes).
+- Next steps: impute missing values; create BMI/age bands; try a simple logistic regression; train/test split.
